@@ -11,24 +11,23 @@ namespace wait_all_tasks
         static void Main(string[] args)
         {
             // Make some test data
-            for (int i = 0; i < 95; i++) testData.Add((i+1).ToString());
+            for (int i = 0; i < 25; i++) testData.Add((i+1).ToString());
 
+            List<string> batch = new List<string>();
             List<Task> tasks = new List<Task>();
             for (int count = 0; count < testData.Count; count++)
             {
-                if (
-                    (batch != null) &&    // not first time     
-                    ((count % 10) == 0)  // Every 10 times
-                   )
+                if ((count % 10) == 0)  // Every 10 times
                 {
                     tasks.Add(Task.Run(() => processBatch(batch)));
+                    batch = null;
                     batch = new List<string>();
                 }
-                else
-                {
-                    batch.Add(testData[count]);
-                }
+                batch.Add(testData[count]);
             }
+            // Final partial < 10
+            tasks.Add(Task.Run(() => processBatch(batch)));
+
             Task.WaitAll(tasks.ToArray());
 
             // Pause
@@ -37,7 +36,8 @@ namespace wait_all_tasks
 
         private static void processBatch(List<string> batch)
         {
-            Console.WriteLine("processing batch of " batch.Count.ToString());
+            if (batch.Count == 0) 
+                return;   // It's either the first time or "partial" batch at end was empty
             // Processes a batch containing up to 10 strings
             foreach (var s in batch)
             {
@@ -45,6 +45,6 @@ namespace wait_all_tasks
                 Console.WriteLine(s);
             }
         }
-        static List<string> testData = new List<string>(), batch = null;
+        static List<string> testData = new List<string>();
     }
 }
